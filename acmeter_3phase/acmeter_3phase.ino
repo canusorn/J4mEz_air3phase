@@ -109,15 +109,6 @@ void displayValue()
       pf[i] = NAN;
     }
 
-    //dummy data
-//    voltage[i] = random(225, 230);
-//    current[i] = random(1500, 2000) / 1000;
-//    power[i] = voltage[i] * current[i] * 0.8;
-//    energy[i] = 2;
-//    frequency[i] = 50;
-//    pf[i] = 0.8;
-
-
     //------Serial display------
     Serial.print(F("PZEM "));
     Serial.print(i);
