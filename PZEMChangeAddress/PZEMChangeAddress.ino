@@ -7,8 +7,7 @@ PZEM004Tv30 pzem(D3, D4);
    Set your address over here..
    The address can be between 0x01 and 0xF7
  *******************************************/
-#define SET_ADDRESS 0x02
-
+#define SET_ADDRESS 0x03
 void setup()
 {
     Serial.begin(115200);

@@ -19,8 +19,8 @@ char pass[] = "570610193";   // your network password
 int keyIndex = 0;            // your network key Index number (needed only for WEP)
 WiFiClient  client;
 
-unsigned long myChannelNumber = 2631824;
-const char * myWriteAPIKey = "AJS04DC4LQCH931I";
+unsigned long myChannelNumber = 2552953;
+const char * myWriteAPIKey = "56RK2JZSRULTPWH9";
 
 SoftwareSerial pzemSWSerial(D3, D4);
 
@@ -31,8 +31,8 @@ SoftwareSerial pzemSWSerial(D3, D4);
 MicroOLED oled(PIN_RESET, DC_JUMPER); // Example I2C declaration, uncomment if using I2C
 
 unsigned long previousMillis = 0;
-uint8_t phase_display;
-float loadTime;
+uint8_t phase_display, update_sample;
+uint32_t loadTime;
 
 void setup()
 {
@@ -67,10 +67,11 @@ void setup()
 void loop()
 {
   unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= 6000)
+  if (currentMillis - previousMillis >= 5000)
   { // run every 1 second
     previousMillis = currentMillis;
-    loadTime += 0.1;
+    loadTime += 5;
+    update_sample += 5;
 
     phase_display++;
     if (phase_display >= 3)
@@ -109,12 +110,13 @@ void displayValue()
     }
 
     //dummy data
-    voltage[i] = random(220, 230);
-    current[i] = 1.2;
-    power[i] = 321;
-    energy[i] = 2;
-    frequency[i] = 50;
-    pf[i] = 0.8;
+//    voltage[i] = random(225, 230);
+//    current[i] = random(1500, 2000) / 1000;
+//    power[i] = voltage[i] * current[i] * 0.8;
+//    energy[i] = 2;
+//    frequency[i] = 50;
+//    pf[i] = 0.8;
+
 
     //------Serial display------
     Serial.print(F("PZEM "));
@@ -150,7 +152,7 @@ void displayValue()
     Serial.println();
   }
 
-
+  
   //------Update OLED display------
   oled.clear(PAGE);
   oled.setFontType(0);
@@ -222,23 +224,37 @@ void displayValue()
     }
   }
 
-  if (!isnan(power[0]) && !isnan(power[1]) && !isnan(power[2]) ) {
-    ThingSpeak.setField(1, (voltage[0] + voltage[1] + voltage[2]) / 3);
-    ThingSpeak.setField(2, current[0] + current[1] + current[2]);
-    ThingSpeak.setField(3, power[0] + power[1] + power[2]);
-    ThingSpeak.setField(4, energy[0] + energy[1] + energy[2]);
-    ThingSpeak.setField(5, (pf[0] + pf[1] + pf[2]) / 3);
-    ThingSpeak.setField(6, loadTime);
 
-    // write to the ThingSpeak channel
-    int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
-    if (x == 200) {
-      Serial.println("Channel update successful.");
-    }
-    else {
-      Serial.println("Problem updating channel. HTTP error code " + String(x));
+    int hours = loadTime / 3600;
+    int minutes = (loadTime % 3600) / 60;
+    int seconds = (loadTime % 3600) % 60;
+
+    float loadTimebase60 = hours + (minutes / 100.0);
+    
+  Serial.println("Load Time is : " + String(loadTimebase60));
+  Serial.println(F("-------------------"));
+
+
+  if (!isnan(power[0]) && !isnan(power[1]) && !isnan(power[2]) ) {
+    if ( update_sample >= 30) {    // update every 30 second
+      update_sample = 0;
+
+      ThingSpeak.setField(1, (voltage[0] + voltage[1] + voltage[2]) / 3);
+      ThingSpeak.setField(2, current[0] + current[1] + current[2]);
+      ThingSpeak.setField(3, power[0] + power[1] + power[2]);
+      ThingSpeak.setField(4, energy[0] + energy[1] + energy[2]);
+      ThingSpeak.setField(5, (pf[0] + pf[1] + pf[2]) / 3);
+      ThingSpeak.setField(6, loadTimebase60);
+
+      // write to the ThingSpeak channel
+      int x = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+      if (x == 200) {
+        Serial.println("Channel update successful.");
+      }
+      else {
+        Serial.println("Problem updating channel. HTTP error code " + String(x));
+      }
     }
   }
-
 
 }
